@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DocumentManagement.Api/DocumentManagement.Api.csproj" />
+  <Project Path="DocumentManagement.Tests/DocumentManagement.Tests.csproj" />
+</Solution>
