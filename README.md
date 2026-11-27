@@ -207,10 +207,3 @@ The tests are in `DocumentManagement.Tests/DocumentsControllerTests.cs`.
 | `Upload_UnsupportedExtension_ReturnsUnsupportedMediaType` | Unsupported file type is rejected with 415 | Extra |
 | `Delete_NonExistentDocument_ReturnsNotFound` | Deleting an unknown id returns 404 | Extra |
 | `Delete_WhenFileDeleteFails_ReturnsServerErrorAndKeepsRecord` | A disk error during delete returns 500 and keeps the database record | Extra |
-
-### Test limitations
-
-- The tests call the controller directly. They do not exercise the real HTTP pipeline, so framework behaviour such as model binding and the request size limit attribute is not covered.
-- The in-memory database does not enforce the unique index or the column length limits, and it does not run migrations.
-- `LocalFileStorageService`, which contains the path-traversal protection, is replaced by a fake and has no tests of its own.
-- There is no test for the download endpoint.
