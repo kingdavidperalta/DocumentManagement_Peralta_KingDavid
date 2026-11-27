@@ -39,6 +39,11 @@ public class DocumentsController : ControllerBase
 
     // POST /api/documents
     [HttpPost]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(DocumentResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
     public async Task<ActionResult<DocumentResponseDto>> Upload(IFormFile file, CancellationToken cancellationToken)
     {
         if (file.Length == 0)
@@ -115,6 +120,7 @@ public class DocumentsController : ControllerBase
 
     // GET /api/documents
     [HttpGet]
+    [ProducesResponseType(typeof(List<DocumentResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<DocumentResponseDto>>> GetAll(CancellationToken cancellationToken)
     {
         var documents = await _context.Documents
@@ -135,6 +141,8 @@ public class DocumentsController : ControllerBase
 
     // GET /api/documents/{id}
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(DocumentResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DocumentResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var document = await _context.Documents
@@ -162,6 +170,8 @@ public class DocumentsController : ControllerBase
 
     // GET /api/documents/{id}/download
     [HttpGet("{id:guid}/download")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Download(Guid id, CancellationToken cancellationToken)
     {
         var document = await _context.Documents
@@ -191,6 +201,9 @@ public class DocumentsController : ControllerBase
 
     // DELETE /api/documents/{id}
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var document = await _context.Documents
