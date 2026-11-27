@@ -14,7 +14,7 @@ builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 var app = builder.Build();
 
-// Apply pending migrations on startup so the database is created automatically (useful in Docker).
+// Apply pending migrations on startup so the database is created automatically.
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -23,7 +23,14 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
+    // Generates the API description at /openapi/v1.json
     app.MapOpenApi();
+
+    // Shows the Swagger page at /swagger
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Document Management API v1");
+    });
 }
 
 app.UseHttpsRedirection();

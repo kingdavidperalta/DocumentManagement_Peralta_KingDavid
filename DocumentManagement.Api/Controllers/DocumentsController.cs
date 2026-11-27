@@ -132,4 +132,94 @@ public class DocumentsController : ControllerBase
 
         return Ok(documents);
     }
+
+    // GET /api/documents/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<DocumentResponseDto>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var document = await _context.Documents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(document => document.Id == id, cancellationToken);
+
+        if (document == null)
+        {
+            return Problem(title: "Document not found",
+                           detail: $"No document exists with id {id}.",
+                           statusCode: StatusCodes.Status404NotFound);
+        }
+
+        var response = new DocumentResponseDto
+        {
+            Id = document.Id,
+            OriginalFileName = document.OriginalFileName,
+            ContentType = document.ContentType,
+            FileSize = document.FileSize,
+            UploadedAt = document.UploadedAt
+        };
+
+        return Ok(response);
+    }
+
+    // GET /api/documents/{id}/download
+    [HttpGet("{id:guid}/download")]
+    public async Task<IActionResult> Download(Guid id, CancellationToken cancellationToken)
+    {
+        var document = await _context.Documents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(document => document.Id == id, cancellationToken);
+
+        if (document == null)
+        {
+            return Problem( title: "Document not found",
+                            detail: $"No document exists with id {id}.",
+                            statusCode: StatusCodes.Status404NotFound);
+        }
+
+        var stream = _storage.OpenRead(document.StoredFileName);
+
+        if (stream == null)
+        {
+            // The database record exists but the physical file is gone.
+            return Problem( title: "File not found",
+                            detail: "The document record exists but its stored file could not be found.",
+                            statusCode: StatusCodes.Status404NotFound);
+        }
+
+        // File() closes the stream after sending the response.
+        return File(stream, document.ContentType, document.OriginalFileName);
+    }
+
+    // DELETE /api/documents/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var document = await _context.Documents
+            .FirstOrDefaultAsync(document => document.Id == id, cancellationToken);
+
+        if (document == null)
+        {
+            return Problem( title: "Document not found",
+                            detail: $"No document exists with id {id}.",
+                            statusCode: StatusCodes.Status404NotFound);
+        }
+
+        // Delete the file first. If this fails, the database record is kept,
+        // so the record never points to a file we silently lost track of.
+        try
+        {
+            _storage.Delete(document.StoredFileName);
+        }
+        catch (IOException)
+        {
+            return Problem( title: "Delete failed",
+                            detail: "The stored file could not be deleted. Please try again.",
+                            statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        // If the file was already missing, Delete returns false and we still remove the record.
+        _context.Documents.Remove(document);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
 }
